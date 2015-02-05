@@ -11,8 +11,7 @@ class Aristocrat {
         {
             throw new Exception("You need to enable the oci for the further action");
         }
-        $S7S ="
-                (DESCRIPTION =
+        $S7S ="(DESCRIPTION =
                 (ADDRESS_LIST =
                 (ADDRESS = (PROTOCOL = TCP)(HOST =". $config['db_host'].")(PORT =". $config['db_port']."))
                 )
@@ -21,17 +20,17 @@ class Aristocrat {
                 )
                 )";
 
-        $this->conn = oci_connect($config['db_username'], $config['db_password'], $S7S);
+        $this->conn = @oci_connect($config['db_username'], $config['db_password'], $S7S);
         if(!$this->conn)
         {
-            throw new Excepttion ("Fail to connect to the database with the provided details");
+            throw new Exception ("Fail to connect to the database with the provided details");
         }
     }
 
-    function addData($membership_number)
+    function addData($membership_number = Null)
     {
         if(empty($dataArray))
-            return false;
+            throw new Exception ("Fail to connect to the database with the provided details");
 
         $sql = '
                 BEGIN
@@ -115,6 +114,12 @@ class Aristocrat {
 
     function selectData()
     {
+	$s = oci_parse($this->conn, "select * from v_pub_members where MEMBERNUMBER ='9849060452'");
+
+	$ret = oci_execute($s);
+
+	oci_fetch_all($s, $result, null, null, OCI_FETCHSTATEMENT_BY_ROW);
+	return $result;
 
     }
 
