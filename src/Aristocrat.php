@@ -1,19 +1,23 @@
 <?php
+
 namespace Matrix\Aristocrat;
 
 use Exception;
 use Illuminate\Config\Repository as ConfigRepository;
-class Aristocrat {
-    public $conn;
-    function __construct($config = array())
+
+class Aristocrat
+{
+    protected $conn;
+    protected $config;
+
+    public function __construct($config = array())
     {
-        if(!function_exists('oci_connect'))
-        {
+        if (!function_exists('oci_connect')) {
             throw new Exception("You need to enable the oci for the further action");
         }
         $S7S ="(DESCRIPTION =
                 (ADDRESS_LIST =
-                (ADDRESS = (PROTOCOL = TCP)(HOST =". $config['db_host'].")(PORT =". $config['db_port']."))
+                (ADDRESS = (PROTOCOL = TCP)(HOST =".$config['db_host'].")(PORT =". $config['db_port']."))
                 )
                 (CONNECT_DATA =
                 (SERVICE_NAME = ".$config['db_servicename'].")
@@ -21,16 +25,19 @@ class Aristocrat {
                 )";
 
         $this->conn = @oci_connect($config['db_username'], $config['db_password'], $S7S);
-        if(!$this->conn)
-        {
-            throw new Exception ("Fail to connect to the database with the provided details");
+
+        if (!$this->conn) {
+            throw new Exception("Fail to connect to the database with the provided details");
         }
+
+        $this->config = $config;
     }
 
-    function addData($membership_number = Null)
+    public function addData($membership_number = null)
     {
-        if(empty($dataArray))
-            throw new Exception ("Fail to connect to the database with the provided details");
+        if (empty($dataArray)) {
+            throw new Exception("Fail to connect to the database with the provided details");
+        }
 
         $sql = '
                 BEGIN
@@ -58,13 +65,13 @@ class Aristocrat {
                     :o_return_str,
                     :p_mem_status
                 ); END;
-                ';
+            ';
 
         $p_membership_number = $dataArray['membershipnumber'];
         $p_firstname = $dataArray['firstname'];
         $p_surname = $dataArray['surname'];
         $p_title = $dataArray['title'];
-        $p_date_of_birth = date('d-M-y',strtotime($dataArray['date_of_birth']));
+        $p_date_of_birth = date('d-M-y', strtotime($dataArray['date_of_birth']));
         $p_join_date = date('d-M-y');
         $p_gender = $dataArray['gender'];
         $p_telephone = $dataArray['telephone'];
@@ -77,7 +84,7 @@ class Aristocrat {
         $p_mail_barcode = $dataArray['mail_barcode'];
         $p_email = $dataArray['email'];
         $p_card_number = $dataArray['card_number'];
-        $p_card_expiry_date = date('d-M-y',strtotime($dataArray['card_expiry_date']));
+        $p_card_expiry_date = date('d-M-y', strtotime($dataArray['card_expiry_date']));
         $p_suspension_status = 1;
         $o_return_code = 12;
         $o_return_str = 'Output parameter from the stored procedure i.e. the string that gives more information';
@@ -89,7 +96,7 @@ class Aristocrat {
         oci_bind_by_name($s, ':p_surname', $p_surname);
         oci_bind_by_name($s, ':p_title', $p_title);
         oci_bind_by_name($s, ':p_date_of_birth', $p_date_of_birth);
-        oci_bind_by_name($s,  ':p_join_date', $p_join_date);
+        oci_bind_by_name($s, ':p_join_date', $p_join_date);
         oci_bind_by_name($s, ':p_gender', $p_gender);
         oci_bind_by_name($s, ':p_telephone', $p_telephone);
         oci_bind_by_name($s, ':p_mobile_phone', $p_mobile_phone);
@@ -112,28 +119,26 @@ class Aristocrat {
         echo $o_return_str;
     }
 
-    function selectData()
+    public function selectData()
     {
-	$s = oci_parse($this->conn, "select * from v_pub_members where MEMBERNUMBER ='9849060452'");
+        $s   = oci_parse($this->conn, "select * from v_pub_members where MEMBERNUMBER ={$this->config['membership_number']}");
+        $ret = oci_execute($s);
 
-	$ret = oci_execute($s);
-
-	oci_fetch_all($s, $result, null, null, OCI_FETCHSTATEMENT_BY_ROW);
-	return $result;
-
+        oci_fetch_all($s, $result, null, null, OCI_FETCHSTATEMENT_BY_ROW);
+        return $result;
     }
 
-    function deleteData($membershipnumber)
+    public function deleteData($membershipnumber)
     {
         $sql = "
-    BEGIN
-    SP_DELETE_MEMBER
-    (
-        :p_member_number,
-        :o_return_code,
-        :o_return_str
-    ); END;
-";
+            BEGIN
+            SP_DELETE_MEMBER
+            (
+                :p_member_number,
+                :o_return_code,
+                :o_return_str
+            ); END;
+        ";
 
         $p_member_number = $membershipnumber;
         $o_return_code = 0;
@@ -145,9 +150,5 @@ class Aristocrat {
         oci_bind_by_name($s, ':o_return_str', $o_return_str);
 
         $val = oci_execute($s);
-    }
-    function test()
-    {
-        echo "testing";
     }
 }
