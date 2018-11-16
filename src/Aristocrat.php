@@ -3,31 +3,30 @@
 namespace Matrix\Aristocrat;
 
 use Exception;
-use Illuminate\Config\Repository as ConfigRepository;
 
 class Aristocrat
 {
     protected $conn;
     protected $config;
 
-    public function __construct($config = array())
+    public function __construct($config = [])
     {
         if (!function_exists('oci_connect')) {
-            throw new Exception("You need to enable the oci for the further action");
+            throw new Exception('You need to enable the oci for the further action');
         }
-        $S7S ="(DESCRIPTION =
+        $S7S = '(DESCRIPTION =
                 (ADDRESS_LIST =
-                (ADDRESS = (PROTOCOL = TCP)(HOST =".$config['db_host'].")(PORT =". $config['db_port']."))
+                (ADDRESS = (PROTOCOL = TCP)(HOST ='.$config['db_host'].')(PORT ='.$config['db_port'].'))
                 )
                 (CONNECT_DATA =
-                (SERVICE_NAME = ".$config['db_servicename'].")
+                (SERVICE_NAME = '.$config['db_servicename'].')
                 )
-                )";
+                )';
 
         $this->conn = @oci_connect($config['db_username'], $config['db_password'], $S7S);
 
         if (!$this->conn) {
-            throw new Exception("Fail to connect to the database with the provided details");
+            throw new Exception('Fail to connect to the database with the provided details');
         }
 
         $this->config = $config;
@@ -36,7 +35,7 @@ class Aristocrat
     public function addData($membership_number = null)
     {
         if (empty($dataArray)) {
-            throw new Exception("Fail to connect to the database with the provided details");
+            throw new Exception('Fail to connect to the database with the provided details');
         }
 
         $sql = '
@@ -121,16 +120,17 @@ class Aristocrat
 
     public function selectData()
     {
-        $s   = oci_parse($this->conn, "select * from v_pub_members where MEMBERNUMBER ={$this->config['membership_number']}");
+        $s = oci_parse($this->conn, "select * from v_pub_members where MEMBERNUMBER ={$this->config['membership_number']}");
         $ret = oci_execute($s);
 
         oci_fetch_all($s, $result, null, null, OCI_FETCHSTATEMENT_BY_ROW);
+
         return $result;
     }
 
     public function deleteData($membershipnumber)
     {
-        $sql = "
+        $sql = '
             BEGIN
             SP_DELETE_MEMBER
             (
@@ -138,7 +138,7 @@ class Aristocrat
                 :o_return_code,
                 :o_return_str
             ); END;
-        ";
+        ';
 
         $p_member_number = $membershipnumber;
         $o_return_code = 0;
